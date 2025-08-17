@@ -123,7 +123,7 @@ func handleFilesRequest(filename string) *HttpResponse {
 	return &HttpResponse{
 		Status:  StatusOk,
 		Version: Version,
-		Headers: map[string]string{ContentType: "text/plain"},
+		Headers: map[string]string{ContentType: "application/octet-stream"},
 		Body:    string(content),
 	}
 }
