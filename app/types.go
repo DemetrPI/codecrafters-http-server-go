@@ -28,6 +28,8 @@ const (
 	Port                      string     = ":4221"
 	IpAddress                 string     = "0.0.0.0"
 	Protocol                  string     = "tcp"
+	Version                   string     = "HTTP/1.1"
+	ContentType               string     = "content-type"
 )
 
 type Server struct {

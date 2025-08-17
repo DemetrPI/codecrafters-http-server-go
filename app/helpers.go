@@ -90,7 +90,7 @@ func parseRequest(conn net.Conn) (*HttpRequest, error) {
 
 func sendResponce(conn net.Conn, res *HttpResponse) {
 	//status line
-	requestResponse := fmt.Sprintf("HTTP/1.1 %s%s", res.Status, CRLF)
+	requestResponse := fmt.Sprint(res.Version, res.Status, CRLF)
 
 	//headers
 	res.Headers["content-length"] = fmt.Sprintf("%d", len(res.Body))
@@ -102,6 +102,30 @@ func sendResponce(conn net.Conn, res *HttpResponse) {
 	requestResponse += CRLF + res.Body
 	fmt.Println("Responce:==>", requestResponse)
 	conn.Write([]byte(requestResponse))
+}
+
+func handleFilesRequest(filename string) *HttpResponse {
+	args := os.Args
+	if len(args) < 2 {
+		return &HttpResponse{
+			Status:  StatusInternalServerError,
+			Headers: make(map[string]string),
+		}
+	}
+	directoryName := args[2]
+	content, err := os.ReadFile(directoryName + filename)
+	if err != nil {
+		return &HttpResponse{
+			Status:  StatusNotFound,
+			Headers: make(map[string]string),
+		}
+	}
+	return &HttpResponse{
+		Status:  StatusOk,
+		Version: Version,
+		Headers: map[string]string{ContentType: "text/plain"},
+		Body:    string(content),
+	}
 }
 
 func (request *HttpRequest) routeRequest() *HttpResponse {
@@ -120,16 +144,18 @@ func (request *HttpRequest) routeRequest() *HttpResponse {
 		return &HttpResponse{
 			Status:  StatusOk,
 			Version: request.Version,
-			Headers: map[string]string{"content-type": "text/plain"},
+			Headers: map[string]string{ContentType: "text/plain"},
 			Body:    parts[1],
 		}
 	case parts[0] == "user-agent" && len(parts) == 1:
 		return &HttpResponse{
 			Status:  StatusOk,
 			Version: request.Version,
-			Headers: map[string]string{"content-type": "text/plain"},
+			Headers: map[string]string{ContentType: "text/plain"},
 			Body:    request.Headers["user-agent"],
 		}
+	case parts[0] == "files" && len(parts) == 2:
+		return handleFilesRequest(parts[1])
 	default:
 		return &HttpResponse{
 			Status:  StatusNotFound,
