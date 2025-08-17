@@ -153,7 +153,7 @@ func (request *HttpRequest) routeRequest() *HttpResponse {
 	case parts[0] == "user-agent" && len(parts) == 1:
 		return &HttpResponse{
 			Status:  StatusOk,
-			Version: request.Version,
+			Version: Version,
 			Headers: map[string]string{ContentType: "text/plain"},
 			Body:    request.Headers["user-agent"],
 		}
