@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"strconv"
 	"strings"
 )
 
 func (s *Server) Listen() {
-	l, err := net.Listen("tcp", "0.0.0.0:4221")
+	l, err := net.Listen(Protocol, IpAddress+Port)
 	if err != nil {
 		fmt.Println("Error listening: ", err.Error())
 		os.Exit(1)
@@ -94,7 +93,7 @@ func sendResponce(conn net.Conn, res *HttpResponse) {
 	requestResponse := fmt.Sprintf("HTTP/1.1 %s%s", res.Status, CRLF)
 
 	//headers
-	res.Headers["content-length"] = strconv.Itoa(len(res.Body))
+	res.Headers["content-length"] = fmt.Sprintf("%d", len(res.Body))
 	for key, value := range res.Headers {
 		requestResponse += fmt.Sprintf("%s: %s%s", key, value, CRLF)
 	}
@@ -108,6 +107,7 @@ func sendResponce(conn net.Conn, res *HttpResponse) {
 func (request *HttpRequest) routeRequest() *HttpResponse {
 	path := strings.Trim(request.URL, "/") //Remove leading and trailing '/'
 	parts := strings.Split(path, "/")
+	fmt.Println("Parts:==>", parts)
 
 	switch {
 	case request.URL == "/":

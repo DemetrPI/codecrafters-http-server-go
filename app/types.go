@@ -25,6 +25,9 @@ const (
 	StatusInternalServerError HttpStatus = 500
 	StatusBadRequest          HttpStatus = 400
 	CRLF                      string     = "\r\n"
+	Port                      string     = ":4221"
+	IpAddress                 string     = "0.0.0.0"
+	Protocol                  string     = "tcp"
 )
 
 type Server struct {
