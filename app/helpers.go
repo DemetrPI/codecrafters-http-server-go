@@ -90,7 +90,7 @@ func parseRequest(conn net.Conn) (*HttpRequest, error) {
 
 func sendResponce(conn net.Conn, res *HttpResponse) {
 	//status line
-	requestResponse := fmt.Sprint(res.Version, res.Status, CRLF)
+	requestResponse := fmt.Sprint(res.Version," ", res.Status, CRLF)
 
 	//headers
 	res.Headers["content-length"] = fmt.Sprintf("%d", len(res.Body))
