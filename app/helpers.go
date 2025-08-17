@@ -109,6 +109,7 @@ func handleFilesRequest(filename string) *HttpResponse {
 	if len(args) < 2 {
 		return &HttpResponse{
 			Status:  StatusInternalServerError,
+			Version: Version,
 			Headers: make(map[string]string),
 		}
 	}
@@ -161,6 +162,7 @@ func (request *HttpRequest) routeRequest() *HttpResponse {
 	default:
 		return &HttpResponse{
 			Status:  StatusNotFound,
+			Version: request.Version,
 			Headers: make(map[string]string),
 		}
 	}
