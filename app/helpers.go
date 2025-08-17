@@ -113,10 +113,12 @@ func handleFilesRequest(filename string) *HttpResponse {
 		}
 	}
 	directoryName := args[2]
+
 	content, err := os.ReadFile(directoryName + filename)
 	if err != nil {
 		return &HttpResponse{
 			Status:  StatusNotFound,
+			Version: Version,
 			Headers: make(map[string]string),
 		}
 	}
