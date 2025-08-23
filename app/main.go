@@ -11,12 +11,12 @@ func main() {
 
 	for {
 		conn := s.Accept()
-		go s.HandleConnection(conn)
+		go s.handleConnection(conn)
 	}
 }
 
 
-func (s *Server) HandleConnection(conn net.Conn) {
+func (s *Server) handleConnection(conn net.Conn) {
 	defer conn.Close()
 
 	request, err := parseRequest(conn)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -23,7 +24,7 @@ func parseRequest(conn net.Conn) (*HttpRequest, error) {
 	}
 
 	requestContent := &HttpRequest{
-		Method:  requestParts[0],
+		Method:  HTTPMethod(requestParts[0]),
 		URL:     requestParts[1],
 		Version: requestParts[2],
 		Headers: make(map[string]string),
@@ -44,6 +45,16 @@ func parseRequest(conn net.Conn) (*HttpRequest, error) {
 		}
 	}
 	fmt.Println("RequestContent:==>", requestContent)
+	//Read body
+	contentLength, _ := strconv.Atoi(requestContent.Headers["content-length"])
+	if contentLength > 0 {
+		body := make([]byte, contentLength)
+		_, err := requestData.Read(body)
+		if err != nil {
+			return nil, err
+		}
+		requestContent.Body = string(body)
+	}
 	return requestContent, nil
 }
 
@@ -63,7 +74,71 @@ func sendResponce(conn net.Conn, res *HttpResponse) {
 	conn.Write([]byte(requestResponse))
 }
 
-func handleFilesRequest(filename string) *HttpResponse {
+func (request *HttpRequest) routeRequest() *HttpResponse {
+	path := strings.Trim(request.URL, "/") //Remove leading and trailing '/'
+	parts := strings.Split(path, "/")
+	if len(parts) < 1 {
+		return &HttpResponse{
+			Status:  StatusBadRequest,
+			Version: Version,
+			Headers: make(map[string]string),
+		}
+	}
+	endpoint := parts[0]
+	fmt.Println("Parts:==>", parts)
+	if request.Method == HTTPGet {
+		switch {
+		case request.URL == "/":
+			return &HttpResponse{
+				Status:  StatusOk,
+				Version: Version,
+				Headers: make(map[string]string),
+			}
+		case endpoint == "echo" && len(parts) == 2:
+			return &HttpResponse{
+				Status:  StatusOk,
+				Version: Version,
+				Headers: map[string]string{ContentTypeHeader: ContentTypeText.value},
+				Body:    parts[1],
+			}
+		case endpoint == "user-agent" && len(parts) == 1:
+			return &HttpResponse{
+				Status:  StatusOk,
+				Version: Version,
+				Headers: map[string]string{ContentTypeHeader: ContentTypeText.value},
+				Body:    request.Headers["user-agent"],
+			}
+		case endpoint == "files" && len(parts) == 2:
+			return handleFilesRequestGet(parts[1])
+		default:
+			return &HttpResponse{
+				Status:  StatusNotFound,
+				Version: Version,
+				Headers: make(map[string]string),
+			}
+		}
+	}
+	if request.Method == HTTPPost {
+		switch {
+		case endpoint == "files" && len(parts) == 2:
+			return handleFilesRequestPost(parts[1], []byte(request.Body))
+		default:
+			return &HttpResponse{
+				Status:  StatusNotFound,
+				Version: Version,
+				Headers: make(map[string]string),
+			}
+		}
+	}
+	// Default return
+	return &HttpResponse{
+		Status:  StatusNotFound,
+		Version: Version,
+		Headers: make(map[string]string),
+	}
+}
+
+func handleFilesRequestGet(filename string) *HttpResponse {
 	args := os.Args
 	if len(args) < 2 {
 		return &HttpResponse{
@@ -90,39 +165,28 @@ func handleFilesRequest(filename string) *HttpResponse {
 	}
 }
 
-func (request *HttpRequest) routeRequest() *HttpResponse {
-	path := strings.Trim(request.URL, "/") //Remove leading and trailing '/'
-	parts := strings.Split(path, "/")
-	fmt.Println("Parts:==>", parts)
+func handleFilesRequestPost(filename string, body []byte) *HttpResponse {
+	args := os.Args
+	if len(args) < 2 {
+		return &HttpResponse{
+			Status:  StatusInternalServerError,
+			Version: Version,
+			Headers: make(map[string]string),
+		}
+	}
+	directoryName := args[2]
 
-	switch {
-	case request.URL == "/":
+	writeErr := os.WriteFile(directoryName+filename, body, 0644)
+	if writeErr != nil {
 		return &HttpResponse{
-			Status:  StatusOk,
+			Status:  StatusInternalServerError,
 			Version: Version,
 			Headers: make(map[string]string),
 		}
-	case parts[0] == "echo" && len(parts) == 2:
-		return &HttpResponse{
-			Status:  StatusOk,
-			Version: Version,
-			Headers: map[string]string{ContentTypeHeader: ContentTypeText.value},
-			Body:    parts[1],
-		}
-	case parts[0] == "user-agent" && len(parts) == 1:
-		return &HttpResponse{
-			Status:  StatusOk,
-			Version: Version,
-			Headers: map[string]string{ContentTypeHeader: ContentTypeText.value},
-			Body:    request.Headers["user-agent"],
-		}
-	case parts[0] == "files" && len(parts) == 2:
-		return handleFilesRequest(parts[1])
-	default:
-		return &HttpResponse{
-			Status:  StatusNotFound,
-			Version: Version,
-			Headers: make(map[string]string),
-		}
+	}
+	return &HttpResponse{
+		Status:  StatusCreated,
+		Version: Version,
+		Headers: make(map[string]string),
 	}
 }

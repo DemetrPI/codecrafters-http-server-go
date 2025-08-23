@@ -12,8 +12,10 @@ type ContentType struct {
 
 type HttpStatus int
 
+type HTTPMethod string
+
 type HttpRequest struct {
-	Method  string
+	Method  HTTPMethod
 	URL     string
 	Version string
 	Headers map[string]string
@@ -30,12 +32,19 @@ type HttpResponse struct {
 const (
 	//Statuses
 	StatusOk                  HttpStatus = 200
+	StatusCreated             HttpStatus = 201
+	StatusMovedPermanently    HttpStatus = 301
 	StatusNotFound            HttpStatus = 404
 	StatusInternalServerError HttpStatus = 500
 	StatusBadRequest          HttpStatus = 400
 	//Headers
 	ContentTypeHeader string = "Content-Type"
-	//Other
+	//HTTPMethods
+	HTTPGet    HTTPMethod = "GET"
+	HTTPPost   HTTPMethod = "POST"
+	HTTPPut    HTTPMethod = "PUT"
+	HTTPDelete HTTPMethod = "DELETE"
+	//Others
 	CRLF      string = "\r\n"
 	Port      string = ":4221"
 	IpAddress string = "0.0.0.0"

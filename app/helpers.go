@@ -36,6 +36,8 @@ func (s HttpStatus) String() string {
 		return "200 OK"
 	case StatusBadRequest:
 		return "400 Bad Request"
+	case StatusCreated:
+		return "201 Created"
 	case StatusNotFound:
 		return "404 Not Found"
 	case StatusInternalServerError:
