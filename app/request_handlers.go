@@ -44,7 +44,6 @@ func parseRequest(conn net.Conn) (*HttpRequest, error) {
 			requestContent.Headers[key] = value
 		}
 	}
-	fmt.Println("RequestContent:==>", requestContent)
 	//Read body
 	contentLength, _ := strconv.Atoi(requestContent.Headers["content-length"])
 	if contentLength > 0 {
@@ -82,7 +81,6 @@ func sendResponce(conn net.Conn, responce *HttpResponse, request *HttpRequest) {
 
 	//body
 	reqResp.WriteString(CRLF + responce.Body)
-	fmt.Println("Responce:==>", reqResp, "<====")
 	conn.Write([]byte(reqResp.String()))
 }
 
@@ -97,7 +95,6 @@ func (request *HttpRequest) routeRequest() *HttpResponse {
 		}
 	}
 	endpoint := parts[0]
-	fmt.Println("Parts:==>", parts)
 	if request.Method == HTTPGet {
 		switch {
 		case request.URL == "/":
