@@ -2,7 +2,6 @@ package main
 
 import "net"
 
-
 func main() {
 
 	s := Server{}
@@ -15,7 +14,6 @@ func main() {
 	}
 }
 
-
 func (s *Server) handleConnection(conn net.Conn) {
 	defer conn.Close()
 
@@ -25,11 +23,9 @@ func (s *Server) handleConnection(conn net.Conn) {
 			Status:  StatusBadRequest,
 			Headers: make(map[string]string),
 		}
-		sendResponce(conn, responce)
+		sendResponce(conn, responce, request)
 		return
-		}
+	}
 	responce := request.routeRequest()
-	sendResponce(conn, responce)
+	sendResponce(conn, responce, request)
 }
-
-

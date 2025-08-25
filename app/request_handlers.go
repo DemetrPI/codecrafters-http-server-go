@@ -58,19 +58,23 @@ func parseRequest(conn net.Conn) (*HttpRequest, error) {
 	return requestContent, nil
 }
 
-func sendResponce(conn net.Conn, res *HttpResponse) {
+func sendResponce(conn net.Conn, responce *HttpResponse, request *HttpRequest) {
 	//status line
-	requestResponse := fmt.Sprint(res.Version, " ", res.Status, CRLF)
+	requestResponse := fmt.Sprint(responce.Version, " ", responce.Status, CRLF)
 
-	//headers
-	res.Headers["content-length"] = fmt.Sprintf("%d", len(res.Body))
-	for key, value := range res.Headers {
+	//write headers
+	responce.Headers["content-length"] = fmt.Sprintf("%d", len(responce.Body))
+
+	if request.Headers["accept-encoding"] == "gzip" {
+		responce.Headers["content-encoding"] = "gzip"
+	}
+	for key, value := range responce.Headers {
 		requestResponse += fmt.Sprintf("%s: %s%s", key, value, CRLF)
 	}
 
 	//body
-	requestResponse += CRLF + res.Body
-	fmt.Println("Responce:==>", requestResponse)
+	requestResponse += CRLF + responce.Body
+	fmt.Println("Responce:==>", requestResponse, "<====")
 	conn.Write([]byte(requestResponse))
 }
 
