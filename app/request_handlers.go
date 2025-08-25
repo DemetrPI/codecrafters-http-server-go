@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+
 	"fmt"
 	"net"
 	"os"
@@ -57,7 +58,7 @@ func parseRequest(conn net.Conn) (*HttpRequest, error) {
 	return requestContent, nil
 }
 
-func sendResponce(conn net.Conn, responce *HttpResponse, request *HttpRequest) {
+func sendResponce(conn net.Conn, responce *HttpResponse, request *HttpRequest) error {
 	//status line
 	var reqResp strings.Builder
 
@@ -70,7 +71,7 @@ func sendResponce(conn net.Conn, responce *HttpResponse, request *HttpRequest) {
 		for encoding := range encodings {
 			if strings.TrimSpace(encoding) == "gzip" {
 				responce.Headers["content-encoding"] = "gzip"
-				break
+				handleCompression(responce)
 			}
 		}
 	}
@@ -82,6 +83,7 @@ func sendResponce(conn net.Conn, responce *HttpResponse, request *HttpRequest) {
 	//body
 	reqResp.WriteString(CRLF + responce.Body)
 	conn.Write([]byte(reqResp.String()))
+	return nil
 }
 
 func (request *HttpRequest) routeRequest() *HttpResponse {

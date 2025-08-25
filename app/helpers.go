@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"compress/gzip"
 	"fmt"
 	"net"
 	"os"
@@ -45,4 +47,21 @@ func (s HttpStatus) String() string {
 	default:
 		return fmt.Sprintf("Status %d", int(s))
 	}
+}
+
+func handleCompression(responce *HttpResponse) error {
+	var buffer bytes.Buffer
+	gzipWriter := gzip.NewWriter(&buffer)
+	if _, err := gzipWriter.Write([]byte(responce.Body)); err != nil {
+		return fmt.Errorf("compression failed, %s", err.Error())
+	}
+	if err := gzipWriter.Flush(); err != nil {
+		return fmt.Errorf("flush failed, %s", err.Error())
+	}
+	if err := gzipWriter.Close(); err != nil {
+		return fmt.Errorf("close failed, %s", err.Error())
+	}
+	responce.Headers["content-length"] = fmt.Sprintf("%d", buffer.Len())
+	responce.Body = buffer.String()
+	return nil
 }
