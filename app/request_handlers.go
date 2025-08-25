@@ -60,22 +60,30 @@ func parseRequest(conn net.Conn) (*HttpRequest, error) {
 
 func sendResponce(conn net.Conn, responce *HttpResponse, request *HttpRequest) {
 	//status line
-	requestResponse := fmt.Sprint(responce.Version, " ", responce.Status, CRLF)
+	var reqResp strings.Builder
+
+	reqResp.WriteString(fmt.Sprint(responce.Version, " ", responce.Status, CRLF))
 
 	//write headers
 	responce.Headers["content-length"] = fmt.Sprintf("%d", len(responce.Body))
-
-	if request.Headers["accept-encoding"] == "gzip" {
-		responce.Headers["content-encoding"] = "gzip"
+	if val, ok := request.Headers["accept-encoding"]; ok {
+		encodings := strings.SplitSeq(val, ",")
+		for encoding := range encodings {
+			if strings.TrimSpace(encoding) == "gzip" {
+				responce.Headers["content-encoding"] = "gzip"
+				break
+			}
+		}
 	}
+
 	for key, value := range responce.Headers {
-		requestResponse += fmt.Sprintf("%s: %s%s", key, value, CRLF)
+		reqResp.WriteString(fmt.Sprintf("%s: %s%s", key, value, CRLF))
 	}
 
 	//body
-	requestResponse += CRLF + responce.Body
-	fmt.Println("Responce:==>", requestResponse, "<====")
-	conn.Write([]byte(requestResponse))
+	reqResp.WriteString(CRLF + responce.Body)
+	fmt.Println("Responce:==>", reqResp, "<====")
+	conn.Write([]byte(reqResp.String()))
 }
 
 func (request *HttpRequest) routeRequest() *HttpResponse {
