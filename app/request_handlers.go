@@ -69,6 +69,9 @@ func sendResponce(conn net.Conn, responce *HttpResponse, request *HttpRequest) e
 	fmt.Fprint(reqResp, responce.Version, " ", responce.Status, CRLF)
 
 	//write headers
+	if request.Headers["connection"] == "close" {
+		responce.Headers["connection"] = "close"
+	}
 	responce.Headers["content-length"] = fmt.Sprintf("%d", len(responce.Body))
 	if val, ok := request.Headers["accept-encoding"]; ok {
 		encodings := strings.SplitSeq(val, ",")
