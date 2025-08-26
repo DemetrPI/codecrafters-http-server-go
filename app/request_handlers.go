@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"io"
 
 	"fmt"
 	"net"
@@ -10,18 +11,21 @@ import (
 	"strings"
 )
 
-func parseRequest(conn net.Conn) (*HttpRequest, error) {
-	requestData := bufio.NewReader(conn)
+func parseRequest(requestData *bufio.Reader) (*HttpRequest, error, bool) {
 
 	//Read request
 	requestLine, err := requestData.ReadString('\n')
+	if err == io.EOF {
+		return &HttpRequest{}, nil, true
+	}
+
 	if err != nil {
-		return nil, err
+		return nil, err, true
 	}
 
 	requestParts := strings.Fields(requestLine)
 	if len(requestParts) < 3 {
-		return nil, fmt.Errorf("invalid request")
+		return nil, fmt.Errorf("invalid request"), true
 	}
 
 	requestContent := &HttpRequest{
@@ -51,18 +55,18 @@ func parseRequest(conn net.Conn) (*HttpRequest, error) {
 		body := make([]byte, contentLength)
 		_, err := requestData.Read(body)
 		if err != nil {
-			return nil, err
+			return nil, err, true
 		}
 		requestContent.Body = string(body)
 	}
-	return requestContent, nil
+	return requestContent, nil, false
 }
 
 func sendResponce(conn net.Conn, responce *HttpResponse, request *HttpRequest) error {
 	//status line
-	var reqResp strings.Builder
 
-	reqResp.WriteString(fmt.Sprint(responce.Version, " ", responce.Status, CRLF))
+	reqResp := bufio.NewWriter(conn)
+	fmt.Fprint(reqResp, responce.Version, " ", responce.Status, CRLF)
 
 	//write headers
 	responce.Headers["content-length"] = fmt.Sprintf("%d", len(responce.Body))
@@ -72,17 +76,19 @@ func sendResponce(conn net.Conn, responce *HttpResponse, request *HttpRequest) e
 			if strings.TrimSpace(encoding) == "gzip" {
 				responce.Headers["content-encoding"] = "gzip"
 				handleCompression(responce)
+				break
 			}
 		}
 	}
 
 	for key, value := range responce.Headers {
-		reqResp.WriteString(fmt.Sprintf("%s: %s%s", key, value, CRLF))
+		fmt.Fprintf(reqResp, "%s: %s%s", key, value, CRLF)
 	}
 
 	//body
 	reqResp.WriteString(CRLF + responce.Body)
-	conn.Write([]byte(reqResp.String()))
+	reqResp.Flush()
+
 	return nil
 }
 

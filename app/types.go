@@ -19,7 +19,6 @@ type HttpRequest struct {
 	URL     string
 	Version string
 	Headers map[string]string
-	Cookies map[string]string
 	Body    string
 }
 

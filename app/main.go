@@ -1,6 +1,9 @@
 package main
 
-import "net"
+import (
+	"bufio"
+	"net"
+)
 
 func main() {
 
@@ -15,17 +18,23 @@ func main() {
 }
 
 func (s *Server) handleConnection(conn net.Conn) {
+	requestData := bufio.NewReader(conn)
 	defer conn.Close()
+	for {
 
-	request, err := parseRequest(conn)
-	if err != nil {
-		responce := &HttpResponse{
-			Status:  StatusBadRequest,
-			Headers: make(map[string]string),
+		request, err, mustClose := parseRequest(requestData)
+		if err != nil {
+			responce := &HttpResponse{
+				Status:  StatusBadRequest,
+				Headers: make(map[string]string),
+			}
+			sendResponce(conn, responce, request)
+			return
 		}
+		responce := request.routeRequest()
 		sendResponce(conn, responce, request)
-		return
+		if mustClose || request.Headers["connection"] == "close" {
+			break
+		}
 	}
-	responce := request.routeRequest()
-	sendResponce(conn, responce, request)
 }
